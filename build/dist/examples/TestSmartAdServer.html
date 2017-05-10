@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
     <script src="http://ced.sascdn.com/tag/924/smart.js" async></script>
+    <script src="prebid.js" async></script>
     <script>
         var sas = sas || {};
         sas.cmd = sas.cmd || [];
@@ -10,6 +11,266 @@
         sas.cmd.push(function() {
             sas.setup({ networkid: 924, domain: "http://www5.smartadserver.com", async: true });
         });
+
+        //Header Bidding
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        pbjs.que.push(function() {
+          pbjs.bidderSettings = {
+            standard: {
+              adserverTargeting: [{
+                key: "bidder",
+                val: function(bidResponse) {
+                  return bidResponse.bidderCode;
+                }
+              }, {
+                key: "adid",
+                val: function(bidResponse) {
+                  return bidResponse.adId;
+                }
+              }, {
+                key: "size",
+                val: function(bidResponse) {
+                  return bidResponse.size;
+                }
+              }, {
+                key: "bid_price",
+                val: function(bidResponse) {
+                  var cpm = bidResponse.cpm;
+                  if (cpm < 1.00) {
+                    return (Math.floor(cpm * 20) / 20).toFixed(2);
+                  } else if (cpm < 5.00) {
+                    return (Math.floor(cpm * 10) / 10).toFixed(2);
+                  } else if (cpm < 10.00) {
+                    return (Math.floor(cpm * 5) / 5).toFixed(2);
+                  } else if (cpm < 20.00) {
+                    return (Math.floor(cpm * 2) / 2).toFixed(2);
+                  } else if (cpm < 50.00) {
+                    return (Math.floor(cpm * 1) / 1).toFixed(2);
+                  } else if (cpm < 100.00) {
+                    return (Math.floor(cpm * 0.2) / 0.2).toFixed(2);
+                  } else if (cpm < 300.00) {
+                    return (Math.floor(cpm * 0.04) / 0.04).toFixed(2);
+                  } else {
+                    return '300.00';
+                  }
+                }
+              }]
+            }
+          };
+        });
+
+        pbjs.que.push(function() {
+
+          var adUnits = [];
+
+          adUnits.push({
+          code: "20055",
+          sizes: [[300,250], [300,600]],
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: '5756256'
+            }
+          },{
+            bidder: "rubicon",
+            params: {
+              accountId: "13624",
+              siteId: "69052",
+              zoneId: "643018",
+              sizes: [15,10],
+              position: "ATF",
+              inventory: {
+                adunit: "sas_20055",
+                position: "ATF"
+              },
+              visitor: {"age":"4","gender":"2","cluster":"65,69,22,56","subjects":"11","team":"na","equipment":"2","socialclass":"1","microsegments":"na","lists":"","ca":""}
+            }
+          },{
+            bidder: 'smartadserver',
+            params: {
+              domain: "http://www5.smartadserver.com",
+              siteId: "79174",
+              pageId: "578000",
+              formatId: "20055",
+              target: "tga=4;tgg=2;tgp=65;tgp=69;tgp=22;tgp=56;tgs=11;tge=2;tgc=1;content_id=home;PQ_ThCeO8=XXAU-li270;PQ_Vj8tat=XXAU-li269;"
+             }
+          }]
+        });
+
+        adUnits.push({
+          code: "20056",
+          sizes: [[300,250], [300,600]],
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: '5756257'
+            }
+          },{
+            bidder: "rubicon",
+            params: {
+              accountId: "13624",
+              siteId: "69052",
+              zoneId: "643018",
+              sizes: [15,10],
+              position: "MTF",
+              inventory: {
+                adunit: "sas_20056",
+                position: "MTF"
+              },
+              visitor: {"age":"4","gender":"2","cluster":"65,69,22,56","subjects":"11","team":"na","equipment":"2","socialclass":"1","microsegments":"na","lists":"","ca":""}
+            }
+          },{
+            bidder: 'smartadserver',
+            params: {
+              domain: "http://www5.smartadserver.com",
+              siteId: "79174",
+              pageId: "578000",
+              formatId: "20056",
+              target: "tga=4;tgg=2;tgp=65;tgp=69;tgp=22;tgp=56;tgs=11;tge=2;tgc=1;content_id=home;PQ_ThCeO8=XXAU-li270;PQ_Vj8tat=XXAU-li269;"
+             }
+          }]
+        });
+
+        adUnits.push({
+          code: "20009",
+          sizes: [[728,90], [970,250]],
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: '5756253'
+            }
+          },{
+            bidder: "rubicon",
+            params: {
+              accountId: "13624",
+              siteId: "69052",
+              zoneId: "643018",
+              sizes: [2,57],
+              position: "ATF",
+              inventory: {
+                adunit: "sas_20009",
+                position: "ATF"
+              },
+              visitor: {"age":"4","gender":"2","cluster":"65,69,22,56","subjects":"11","team":"na","equipment":"2","socialclass":"1","microsegments":"na","lists":"","ca":""}
+            }
+          },{
+            bidder: 'smartadserver',
+            params: {
+              domain: "http://www5.smartadserver.com",
+              siteId: "79174",
+              pageId: "578000",
+              formatId: "20009",
+              target: "tga=4;tgg=2;tgp=65;tgp=69;tgp=22;tgp=56;tgs=11;tge=2;tgc=1;content_id=home;PQ_ThCeO8=XXAU-li270;PQ_Vj8tat=XXAU-li269;"
+             }
+          }]
+        });
+
+        adUnits.push({
+          code: "30352",
+          sizes: [[728,90], [970,250]],
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: '5756255'
+            }
+          },{
+            bidder: "rubicon",
+            params: {
+              accountId: "13624",
+              siteId: "69052",
+              zoneId: "643018",
+              sizes: [2,57],
+              position: "BTF",
+              inventory: {
+                adunit: "sas_30352",
+                position: "BTF"
+              },
+              visitor: {"age":"4","gender":"2","cluster":"65,69,22,56","subjects":"11","team":"na","equipment":"2","socialclass":"1","microsegments":"na","lists":"","ca":""}
+            }
+          },{
+            bidder: 'smartadserver',
+            params: {
+              domain: "http://www5.smartadserver.com",
+              siteId: "79174",
+              pageId: "578000",
+              formatId: "30352",
+              target: "tga=4;tgg=2;tgp=65;tgp=69;tgp=22;tgp=56;tgs=11;tge=2;tgc=1;content_id=home;PQ_ThCeO8=XXAU-li270;PQ_Vj8tat=XXAU-li269;"
+             }
+          }]
+        });
+
+          pbjs.addAdUnits(adUnits);
+          pbjs.requestBids({
+            bidsBackHandler: function(bidResponses) {
+              // depois da negociação de bids, renderiza os formatos
+              initAdserver();
+            }
+          });
+        })
+
+        var PREBID_TIMEOUT = 14000;
+        function initAdserver() {
+          console.log("initAdserver");
+          if (typeof pbjs !== 'undefined' && pbjs.initAdserverSet) return; // if already initi
+
+          try {
+            adserverCall();
+
+            adsInterval = setInterval(function(){
+              console.log("sas interval");
+              if(window.sas_manager != null) {
+                console.log("sas render");
+
+                console.log(window.sas_manager);
+
+                clearInterval(adsInterval)
+
+                if(document.getElementById("sas_20009")) sas.render("sas_20009");
+
+                if(document.getElementById("sas_23428")) sas.render("sas_23428");
+
+                if(document.getElementById("sas_46253")) sas.render("sas_46253");
+
+                if(document.getElementById("sas_46254")) sas.render("sas_46254");
+
+                if(document.getElementById("sas_42416")) sas.render("sas_42416");
+
+                if(document.getElementById("sas_44766")) sas.render("sas_44766");
+
+                if(document.getElementById("sas_20055")) sas.render("sas_20055");
+
+                if(document.getElementById("sas_31715")) sas.render("sas_31715");
+
+                if(document.getElementById("sas_34234")) sas.render("sas_34234");
+
+                if(document.getElementById("sas_20056")) sas.render("sas_20056");
+
+                if(document.getElementById("sas_30352")) sas.render("sas_30352");
+
+                console.log("----------------------");
+                console.log("ADS: render finished  ");
+                console.log("----------------------");
+              }
+            }, 500)
+
+            if (pbjs) pbjs.initAdserverSet = true;
+          } catch (e) {
+            console.info("An Ads Exception has ocurred.\n", e);
+          }
+        };
+
+      function adserverCall() {
+        sas.call("onecall", {
+            siteId:   79174,  //
+            pageId:   "578000",
+            formatId: "20009,23428,46253,46254,42416,44766,20055,31715,34234,20056,30352",
+            target:   "tga=4;tgg=2;tgp=65;tgp=69;tgp=22;tgp=56;tgs=11;tge=2;tgc=1;content_id=home;PQ_ThCeO8=XXAU-li270;PQ_Vj8tat=XXAU-li269;"
+        });
+      }
+
+      setTimeout(initAdserver, PREBID_TIMEOUT);
     </script>
     <title></title>
     <style type="text/css">
@@ -21,14 +282,16 @@
 </head>
 <body>
 
+<div class="main-content"></div>
+
 <h1> 23428 </h1>
 <div id="sas_23428" data-mad="" data-mad-smartad-id="23428" data-mad-lazyload-offset="100" data-mad-auto-refresh-in-seconds="20" data-mad-auto-refresh-limit="999"></div>
 
 <h1> 20009 </h1>
 <div id="sas_20009" data-mad="" data-mad-smartad-id="20009" data-mad-lazyload-offset="100" data-mad-auto-refresh-in-seconds="20" data-mad-auto-refresh-limit="999"></div>
 
-<h1> 20009 </h1>
-<div id="sas_46253" data-mad="" data-mad-smartad-id="20009" data-mad-lazyload-offset="100" data-mad-auto-refresh-in-seconds="20" data-mad-auto-refresh-limit="999"></div>
+<h1> 46253 </h1>
+<div id="sas_46253" data-mad="" data-mad-smartad-id="46253" data-mad-lazyload-offset="100" data-mad-auto-refresh-in-seconds="20" data-mad-auto-refresh-limit="999"></div>
 
 <h1> 46254 </h1>
 <div id="sas_46254" data-mad="" data-mad-smartad-id="46254" data-mad-lazyload-offset="100" data-mad-auto-refresh-in-seconds="20" data-mad-auto-refresh-limit="999"></div>
@@ -62,18 +325,20 @@
 
 <!-- ::: versão dev::: usar '#development' no final da url para visualizar os logs -->
 
-<script type="text/javascript" src="../molotov-ads.js" async></script>
-<script type="text/javascript" src="../plugins/smartadserver.js" async></script>
+<!-- <script type="text/javascript" src="../molotov-ads.js" async></script> -->
+<!-- <script type="text/javascript" src="../plugins/smartadserver.js" async></script> -->
 
 <script>
-    var madOptions = {
-      SmartAdServer: {
-          siteId: 79174,
-          pageId: "578000",
-          formatId: '23428,20009,46253,46254,42416,44766,20055,31715,34234,20056,30352',
-          target: ''
-      }
-    }
+//   Se o madOptions estiver com estiver com o settings neste ponto ele carrega antes do header bidding
+//
+//   var madOptions = {
+//     SmartAdServer: {
+//         siteId: 79174,
+//         pageId: "578000",
+//         formatId: '23428,20009,46253,46254,42416,44766,20055,31715,34234,20056,30352',
+//         target: ''
+//     }
+//   }
 </script>
 
 </body>
