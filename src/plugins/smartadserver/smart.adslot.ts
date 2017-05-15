@@ -24,7 +24,18 @@ export class SmartAdSlot extends AdSlot {
     }
 
     refresh() {
-        sas.refresh(this.smartAdId);
+        let self = this;
+
+        sas.cmd.push(function() {
+           sas.call("std", {
+               siteId: 79174,
+               pageId: "578000",
+               formatId: self.smartAdId,
+               target: ''
+           });
+       });
+
+       sas.refresh(this.smartAdId);
     }
 
     render() {

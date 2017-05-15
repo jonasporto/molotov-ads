@@ -10,10 +10,11 @@ export class SmartPlugIn implements PlugInInterface {
     name: string = "SmartAdServer";
 
     slots: {} = {};
+    callbacks: any = {};
 
     init(options: any): Promise<void> {
         let self = this;
-
+        this.callbacks = options.callbacks;
         this.slots = this.getSlots();
 
         return new Promise<void>(function(resolve, reject) {
@@ -37,29 +38,49 @@ export class SmartPlugIn implements PlugInInterface {
                     options.sasCallback(event);
             };
 
-            self.onScrollRefreshLazyloadedSlots();
-
             sas.cmd.push(function() {
                 for (let slotName in self.slots) {
+                    let slot: SmartAdSlot = self.slots[slotName];
+
+                    self.trigger("beforeRenderFormat", slot.smartAdId);
                     self.slots[slotName].render();
+
                     Logger.log(self.name, 'ad slot rendered: ', self.slots[slotName]);
                 }
                 resolve();
             });
+
+            self.onScrollRefreshLazyloadedSlots();
         });
     }
 
     private onScrollRefreshLazyloadedSlots() {
         let self = this;
-        window.addEventListener('scroll', function refreshAdsIfItIsInViewport(event) {
+
+        let refreshAdsIfItIsInViewport = function(event) {
+
             for (let slotName in self.slots) {
                 let slot: SmartAdSlot = self.slots[slotName];
+
                 if (slot.lazyloadEnabled && Viewport.isElementInViewport(slot.HTMLElement, slot.lazyloadOffset)) {
+                    self.trigger("beforeRenderFormat", slot.smartAdId);
                     slot.refresh();
                     slot.lazyloadEnabled = false;
+
+                    Logger.log(self.name, 'ad slot refreshed: ', self.slots[slotName]);
                 }
             }
-        });
+        }
+
+        refreshAdsIfItIsInViewport(null);
+
+        window.addEventListener('scroll', refreshAdsIfItIsInViewport);
+    }
+
+    private trigger(callback, params) {
+        if (this.callbacks && this.callbacks[callback]) {
+            this.callbacks[callback].call(params);
+        }
     }
 
     private autoRefresh(slot: SmartAdSlot) {

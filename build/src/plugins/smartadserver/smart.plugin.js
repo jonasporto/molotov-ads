@@ -8,9 +8,11 @@ var SmartPlugIn = (function () {
     function SmartPlugIn() {
         this.name = "SmartAdServer";
         this.slots = {};
+        this.callbacks = {};
     }
     SmartPlugIn.prototype.init = function (options) {
         var self = this;
+        this.callbacks = options.callbacks;
         this.slots = this.getSlots();
         return new Promise(function (resolve, reject) {
             sas.cmd.push(function () {
@@ -28,27 +30,38 @@ var SmartPlugIn = (function () {
                 if (options.sasCallback)
                     options.sasCallback(event);
             };
-            self.onScrollRefreshLazyloadedSlots();
             sas.cmd.push(function () {
                 for (var slotName in self.slots) {
+                    var slot = self.slots[slotName];
+                    self.trigger("beforeRenderFormat", slot.smartAdId);
                     self.slots[slotName].render();
                     logger_1.Logger.log(self.name, 'ad slot rendered: ', self.slots[slotName]);
                 }
                 resolve();
             });
+            self.onScrollRefreshLazyloadedSlots();
         });
     };
     SmartPlugIn.prototype.onScrollRefreshLazyloadedSlots = function () {
         var self = this;
-        window.addEventListener('scroll', function refreshAdsIfItIsInViewport(event) {
+        var refreshAdsIfItIsInViewport = function (event) {
             for (var slotName in self.slots) {
                 var slot = self.slots[slotName];
                 if (slot.lazyloadEnabled && viewport_1.Viewport.isElementInViewport(slot.HTMLElement, slot.lazyloadOffset)) {
+                    self.trigger("beforeRenderFormat", slot.smartAdId);
                     slot.refresh();
                     slot.lazyloadEnabled = false;
+                    logger_1.Logger.log(self.name, 'ad slot refreshed: ', self.slots[slotName]);
                 }
             }
-        });
+        };
+        refreshAdsIfItIsInViewport(null);
+        window.addEventListener('scroll', refreshAdsIfItIsInViewport);
+    };
+    SmartPlugIn.prototype.trigger = function (callback, params) {
+        if (this.callbacks && this.callbacks[callback]) {
+            this.callbacks[callback].call(params);
+        }
     };
     SmartPlugIn.prototype.autoRefresh = function (slot) {
         logger_1.Logger.logWithTime(slot.name, 'started refreshing');
