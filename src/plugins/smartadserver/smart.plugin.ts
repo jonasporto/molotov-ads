@@ -11,15 +11,16 @@ export class SmartPlugIn implements PlugInInterface {
 
     slots: {} = {};
     callbacks: any = {};
+    options: any;
 
     init(options: any): Promise<void> {
         let self = this;
         this.callbacks = options.callbacks;
         this.slots = this.getSlots();
+        this.options = options;
 
         return new Promise<void>(function(resolve, reject) {
-
-            sas.cmd.push(function() {
+            sas.cmd.push(function () {
                 sas.call("onecall", {
                     siteId: options.siteId,
                     pageId: options.pageId,
@@ -42,8 +43,9 @@ export class SmartPlugIn implements PlugInInterface {
                 for (let slotName in self.slots) {
                     let slot: SmartAdSlot = self.slots[slotName];
 
-                    self.trigger("beforeRenderFormat", slot.smartAdId);
-                    self.slots[slotName].render();
+                    self.trigger("beforeRenderFormat", slot.smartAdId, function() {
+                        self.slots[slotName].render();
+                    });
 
                     Logger.log(self.name, 'ad slot rendered: ', self.slots[slotName]);
                 }
@@ -63,8 +65,16 @@ export class SmartPlugIn implements PlugInInterface {
                 let slot: SmartAdSlot = self.slots[slotName];
 
                 if (slot.lazyloadEnabled && Viewport.isElementInViewport(slot.HTMLElement, slot.lazyloadOffset)) {
-                    self.trigger("beforeRenderFormat", slot.smartAdId);
-                    slot.refresh();
+                    self.trigger("beforeRenderFormat", slot.smartAdId, function() {
+                       sas.cmd.push(function() {
+                           sas.call("std", {
+                               siteId: self.options.siteId,
+                               pageId: self.options.pageId,
+                               formatId: self.options.formatId,
+                               target: self.options.target
+                           });
+                        });
+                    });
                     slot.lazyloadEnabled = false;
 
                     Logger.log(self.name, 'ad slot refreshed: ', self.slots[slotName]);
@@ -77,9 +87,9 @@ export class SmartPlugIn implements PlugInInterface {
         window.addEventListener('scroll', refreshAdsIfItIsInViewport);
     }
 
-    private trigger(callback, params) {
-        if (this.callbacks && this.callbacks[callback]) {
-            this.callbacks[callback].call(params);
+    private trigger(event, params, callback) {
+        if (this.callbacks && this.callbacks[event]) {
+            this.callbacks[event].call(this, params, callback);
         }
     }
 

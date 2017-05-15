@@ -14,6 +14,7 @@ var SmartPlugIn = (function () {
         var self = this;
         this.callbacks = options.callbacks;
         this.slots = this.getSlots();
+        this.options = options;
         return new Promise(function (resolve, reject) {
             sas.cmd.push(function () {
                 sas.call("onecall", {
@@ -31,11 +32,15 @@ var SmartPlugIn = (function () {
                     options.sasCallback(event);
             };
             sas.cmd.push(function () {
-                for (var slotName in self.slots) {
+                var _loop_1 = function (slotName) {
                     var slot = self.slots[slotName];
-                    self.trigger("beforeRenderFormat", slot.smartAdId);
-                    self.slots[slotName].render();
+                    self.trigger("beforeRenderFormat", slot.smartAdId, function () {
+                        self.slots[slotName].render();
+                    });
                     logger_1.Logger.log(self.name, 'ad slot rendered: ', self.slots[slotName]);
+                };
+                for (var slotName in self.slots) {
+                    _loop_1(slotName);
                 }
                 resolve();
             });
@@ -48,8 +53,16 @@ var SmartPlugIn = (function () {
             for (var slotName in self.slots) {
                 var slot = self.slots[slotName];
                 if (slot.lazyloadEnabled && viewport_1.Viewport.isElementInViewport(slot.HTMLElement, slot.lazyloadOffset)) {
-                    self.trigger("beforeRenderFormat", slot.smartAdId);
-                    slot.refresh();
+                    self.trigger("beforeRenderFormat", slot.smartAdId, function () {
+                        sas.cmd.push(function () {
+                            sas.call("std", {
+                                siteId: self.options.siteId,
+                                pageId: self.options.pageId,
+                                formatId: self.options.formatId,
+                                target: self.options.target
+                            });
+                        });
+                    });
                     slot.lazyloadEnabled = false;
                     logger_1.Logger.log(self.name, 'ad slot refreshed: ', self.slots[slotName]);
                 }
@@ -58,9 +71,9 @@ var SmartPlugIn = (function () {
         refreshAdsIfItIsInViewport(null);
         window.addEventListener('scroll', refreshAdsIfItIsInViewport);
     };
-    SmartPlugIn.prototype.trigger = function (callback, params) {
-        if (this.callbacks && this.callbacks[callback]) {
-            this.callbacks[callback].call(params);
+    SmartPlugIn.prototype.trigger = function (event, params, callback) {
+        if (this.callbacks && this.callbacks[event]) {
+            this.callbacks[event].call(this, params, callback);
         }
     };
     SmartPlugIn.prototype.autoRefresh = function (slot) {

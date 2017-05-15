@@ -29,18 +29,7 @@ var SmartAdSlot = (function (_super) {
         }
         return _this;
     }
-    SmartAdSlot.prototype.refresh = function () {
-        var self = this;
-        sas.cmd.push(function () {
-            sas.call("std", {
-                siteId: 79174,
-                pageId: "578000",
-                formatId: self.smartAdId,
-                target: ''
-            });
-        });
-        sas.refresh(this.smartAdId);
-    };
+    SmartAdSlot.prototype.refresh = function () { };
     SmartAdSlot.prototype.render = function () {
         if (this.lazyloadEnabled)
             return;
