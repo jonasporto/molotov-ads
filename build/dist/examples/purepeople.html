@@ -1,0 +1,191 @@
+<script src="/_common/javascript/prebid.js" type="text/javascript"></script>
+<script type="text/javascript">
+    var PREBID_TIMEOUT = 14000;
+
+        // Header Bidding
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        function initTudogostoso(allFormats, pageFormats) {
+            pbjs.que.push(function() {
+                pbjs.bidderSettings = {
+                    standard: {
+                        adserverTargeting: [{
+                            key: "bidder",
+                            val: function(bidResponse) {
+                                return bidResponse.bidderCode;
+                            }
+                        }, {
+                            key: "adid",
+                            val: function(bidResponse) {
+                                return bidResponse.adId;
+                            }
+                        }, {
+                            key: "size",
+                            val: function(bidResponse) {
+                                return bidResponse.size;
+                            }
+                        }, {
+                            key: "bid_price",
+                            val: function(bidResponse) {
+                                var cpm = bidResponse.cpm;
+                                if (cpm < 1.00) {
+                                    return (Math.floor(cpm * 20) / 20).toFixed(2);
+                                } else if (cpm < 5.00) {
+                                    return (Math.floor(cpm * 10) / 10).toFixed(2);
+                                } else if (cpm < 10.00) {
+                                    return (Math.floor(cpm * 5) / 5).toFixed(2);
+                                } else if (cpm < 20.00) {
+                                    return (Math.floor(cpm * 2) / 2).toFixed(2);
+                                } else if (cpm < 50.00) {
+                                    return (Math.floor(cpm * 1) / 1).toFixed(2);
+                                } else if (cpm < 100.00) {
+                                    return (Math.floor(cpm * 0.2) / 0.2).toFixed(2);
+                                } else if (cpm < 300.00) {
+                                    return (Math.floor(cpm * 0.04) / 0.04).toFixed(2);
+                                } else {
+                                    return '300.00';
+                                }
+                            }
+                        }]
+                    }
+                };
+            });
+
+            pageFormats = pageFormats.split(',');
+            allFormats = JSON.parse(allFormats);
+
+            var commonConfig = allFormats.common;
+            delete allFormats.common;
+
+            if (site_device == 'mobile') {
+                allFormats = allFormats.mobile;
+                var siteId = commonConfig.mobile.siteId;
+                var zoneId = commonConfig.mobile.zoneId;
+            } else {
+                allFormats = allFormats.desktop;
+                var siteId = commonConfig.desktop.siteId;
+                var zoneId = commonConfig.desktop.zoneId;
+            }
+
+            pbjs.que.push(function() {
+                var adUnits = [];
+
+                for (var formatId in allFormats) {
+
+                    if (pageFormats.indexOf(formatId) < 0) {
+                        continue;
+                    }
+
+                    var currentFormat = allFormats[formatId];
+
+                    adUnits.push({
+                        code: formatId,
+                        sizes: currentFormat.sizes.map(function (size) {
+                            var dimensions = size.split('x');
+                            // convert to numeric
+                            dimensions.map(function(item) {
+                                return Number(item);
+                            });
+
+                            return dimensions;
+                        }),
+                        bids: [{
+                            bidder: 'appnexus',
+                            params: {
+                                placementId: currentFormat.appnexus_placementId
+                            }
+                        },{
+                            bidder: 'rubicon',
+                            params: {
+                                accountId: commonConfig.accountId,
+                                siteId: siteId,
+                                zoneId: zoneId,
+                                sizes: currentFormat.rubicon_sizes,
+                                position: currentFormat.position,
+                                inventory: {
+                                    adunit: 'sas_' + formatId,
+                                    position: currentFormat.position
+                                },
+                                visitor: profileTailTarget
+                            }
+                        }, {
+                            bidder: 'smartadserver',
+                            params: {
+                                domain: 'http://www5.smartadserver.com',
+                                siteId: sasParams.siteId,
+                                pageId: sasParams.pageId,
+                                formatId: formatId,
+                                target: sasParams.target
+                            }
+                        }]
+                    });
+                }
+
+                pbjs.addAdUnits(adUnits);
+                pbjs.requestBids({
+                    bidsBackHandler: function(bidResponses) {
+                        initAdserver();
+                    }
+                });
+            });
+
+            function adserverCall() {
+                // Transform on string do put in adserverCall() Target
+                function getPbTarget()  {
+                    var pbjsTargeting = pbjs.getAdserverTargeting();
+                    var smartTargeting = '';
+                    for (unit in pbjsTargeting) {
+                        for (b in pbjsTargeting[unit]) {
+                            if (pbjsTargeting[unit][b] != '') {
+                             smartTargeting += unit + '_' + b + '=' + pbjsTargeting[unit][b] + ';';
+                         }
+                     }
+                 }
+                 return smartTargeting;
+             }
+             sasParams.target = sasParams.target + getPbTarget() + ';';
+             sas.call('onecall', sasParams);
+         }
+
+         function initAdserver() {
+            if (pbjs.initAdserverSet) return;
+
+            adserverCall();
+            if (pbjs) pbjs.initAdserverSet = true;
+
+            var formatsRendered = [];
+            pageFormats.forEach(function(formatId) {
+                formatsRendered[formatId] = false;
+            });
+
+            adsInterval = setInterval(function() {
+                if (window.sas_manager == null) {
+                    return;
+                }
+
+                pageFormats.forEach(function(formatId) {
+                    if (document.getElementById('sas_' + formatId) && !formatsRendered[formatId]) {
+                        sas.render('sas_' + formatId);
+                        formatsRendered[formatId] = true;
+                    }
+                    console.log('id = sas_' + formatId);
+                });
+
+                var allFormatsRendered = true;
+                formatsRendered.forEach(function(formatRendered) {
+                    allFormatsRendered = allFormatsRendered && formatRendered;
+                });
+
+                if (allFormatsRendered) {
+                    clearInterval(adsInterval);
+                    console.log('ADS: render finished.');
+                }
+            }, 500);
+        }
+
+            setTimeout(initAdserver, PREBID_TIMEOUT); //TIMEOUT PREVENT
+        };
+
+        initTudogostoso('{"common":{"desktop":{"siteId":"60720","zoneId":"289630"},"mobile":{"siteId":"60728","zoneId":"289638"},"accountId":"13624"},"desktop":{"20009":{"sizes":["728x90","970x250"],"appnexus_placementId":"5756157","rubicon_sizes":["2","57"],"position":"ATF"},"20055":{"sizes":["300x600","300x250"],"appnexus_placementId":"5756158","rubicon_sizes":["10","15"],"position":"ATF"},"20056":{"sizes":["300x600","300x250"],"appnexus_placementId":"5756159","rubicon_sizes":["10","15"],"position":"MTF"},"30351":{"sizes":["300x600","300x250"],"appnexus_placementId":"5756160","rubicon_sizes":["10","15"],"position":"BTF"},"30352":{"sizes":["728x90","970x250"],"appnexus_placementId":"11049223","rubicon_sizes":["2","57"],"position":"BTF"}},"mobile":{"20009":{"sizes":["320x100","320x50"],"appnexus_placementId":"5756168","rubicon_sizes":["117","43"],"position":"ATF"},"20055":{"sizes":["300x250"],"appnexus_placementId":"11049225","rubicon_sizes":["15"],"position":"ATF"},"20056":{"sizes":["300x250"],"appnexus_placementId":"5756170","rubicon_sizes":["15"],"position":"MTF"},"30351":{"sizes":["300x250"],"appnexus_placementId":"11049230","rubicon_sizes":["15"],"position":"BTF"},"30352":{"sizes":["320x100","320x50"],"appnexus_placementId":"5756168","rubicon_sizes":["117","43"],"position":"BTF"}}}', '20009,20055,20056,30352');
+    </script>

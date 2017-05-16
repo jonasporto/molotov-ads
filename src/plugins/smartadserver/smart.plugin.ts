@@ -3,6 +3,7 @@ import { PlugInInterface } from "../../interfaces/plugin.interface";
 import { Logger } from "../../modules/logger";
 import { Viewport } from "../../modules/viewport";
 import { AutoRefresh } from "../../modules/autorefresh";
+import { Util } from "../../helpers/util";
 
 declare var sas: any;
 
@@ -18,14 +19,30 @@ export class SmartPlugIn implements PlugInInterface {
 
         return new Promise<void>(function(resolve, reject) {
 
-            sas.cmd.push(function() {
-                sas.call("onecall", {
-                    siteId: options.siteId,
-                    pageId: options.pageId,
-                    formatId: options.formatId,
-                    target: options.target
+            window['adserverCall'] = function() {
+
+                sas.cmd.push(function() {
+                    Logger.log("Will perform \"onecall\" request");
+
+                    sas.call("onecall", {
+                        siteId: options.siteId,
+                        pageId: options.pageId,
+                        formatId: options.formatId,
+                        target: Util.valueFor(options.target)
+                    });
                 });
-            });
+
+                sas.cmd.push(function() {
+                    Logger.log("Will perform render");
+
+                    for (let slotName in self.slots) {
+                        self.slots[slotName].render();
+                        Logger.log(self.name, 'ad slot rendered: ', self.slots[slotName]);
+                    }
+
+                    resolve();
+                });
+            }
 
             window['sasCallback'] = function(event) {
                 Logger.logWithTime(sas.info[event].divId, 'finished slot rendering');
@@ -39,13 +56,6 @@ export class SmartPlugIn implements PlugInInterface {
 
             self.onScrollRefreshLazyloadedSlots();
 
-            sas.cmd.push(function() {
-                for (let slotName in self.slots) {
-                    self.slots[slotName].render();
-                    Logger.log(self.name, 'ad slot rendered: ', self.slots[slotName]);
-                }
-                resolve();
-            });
         });
     }
 
@@ -55,7 +65,7 @@ export class SmartPlugIn implements PlugInInterface {
             for (let slotName in self.slots) {
                 let slot: SmartAdSlot = self.slots[slotName];
                 if (slot.lazyloadEnabled && Viewport.isElementInViewport(slot.HTMLElement, slot.lazyloadOffset)) {
-                    slot.refresh();
+                    slot.refresh(slot);
                     slot.lazyloadEnabled = false;
                 }
             }
@@ -64,7 +74,7 @@ export class SmartPlugIn implements PlugInInterface {
 
     private autoRefresh(slot: SmartAdSlot) {
         Logger.logWithTime(slot.name, 'started refreshing');
-        slot.refresh();
+        slot.refresh(slot);
     }
 
     private getSlots() {

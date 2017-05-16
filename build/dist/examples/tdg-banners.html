@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <script src="http://ced.sascdn.com/tag/924/smart.js" async></script>
+    <script type="text/javascript" src="//acdn.adnxs.com/prebid/not-for-prod/prebid.js" async></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+    <script>
+        var sas = sas || {};
+        sas.cmd = sas.cmd || [];
+
+        sas.cmd.push(function() {
+            sas.setup({ networkid: 924, domain: "http://www5.smartadserver.com", async: true });
+        });
+
+
+        //Header Bidding
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        pbjs.que.push(function bidderSettings() {
+          pbjs.bidderSettings = {
+            standard: {
+              adserverTargeting: [{
+                key: "bidder",
+                val: function(bidResponse) {
+                  return bidResponse.bidderCode;
+                }
+              }, {
+                key: "adid",
+                val: function(bidResponse) {
+                  return bidResponse.adId;
+                }
+              }, {
+                key: "size",
+                val: function(bidResponse) {
+                  return bidResponse.size;
+                }
+              }, {
+                key: "bid_price",
+                val: function(bidResponse) {
+                  var cpm = bidResponse.cpm;
+                  if (cpm < 1.00) {
+                    return (Math.floor(cpm * 20) / 20).toFixed(2);
+                  } else if (cpm < 5.00) {
+                    return (Math.floor(cpm * 10) / 10).toFixed(2);
+                  } else if (cpm < 10.00) {
+                    return (Math.floor(cpm * 5) / 5).toFixed(2);
+                  } else if (cpm < 20.00) {
+                    return (Math.floor(cpm * 2) / 2).toFixed(2);
+                  } else if (cpm < 50.00) {
+                    return (Math.floor(cpm * 1) / 1).toFixed(2);
+                  } else if (cpm < 100.00) {
+                    return (Math.floor(cpm * 0.2) / 0.2).toFixed(2);
+                  } else if (cpm < 300.00) {
+                    return (Math.floor(cpm * 0.04) / 0.04).toFixed(2);
+                  } else {
+                    return '300.00';
+                  }
+                }
+              }]
+            }
+          };
+        });
+
+        //começa formatos
+
+        pbjs.que.push(function requestBids() {
+
+            var adUnits = [];
+
+            adUnits.push({
+              code: "20055",
+              sizes: [[300,250], [300,600]],
+              bids: [{
+                bidder: 'appnexus',
+                params: {
+                  placementId: '5756256'
+                }
+              }, {
+                bidder: "rubicon",
+                params: {
+                  accountId: "13624",
+                  siteId: "69052",
+                  zoneId: "643018",
+                  sizes: [15,10],
+                  position: "ATF",
+                  inventory: {
+                    adunit: "sas_20055",
+                    position: "ATF"
+                  },
+                  visitor: {"age":"4","gender":"2","cluster":"65,69,22,56","subjects":"11","team":"na","equipment":"2","socialclass":"1","microsegments":"na","lists":"","ca":""}
+                }
+              }, {
+                bidder: 'smartadserver',
+                params: {
+                  domain: "http://www5.smartadserver.com",
+                  siteId: "79174",
+                  pageId: "578000",
+                  formatId: "20055",
+                  target: "tga=4;tgg=2;tgp=65;tgp=69;tgp=22;tgp=56;tgs=11;tge=2;tgc=1;content_id=home;PQ_ThCeO8=XXAU-li270;PQ_Vj8tat=XXAU-li269;"
+                }
+              }]
+            });
+
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+              bidsBackHandler: function(bidResponses) {
+                initAdserver();
+              }
+            });
+        });
+
+        var PREBID_TIMEOUT = 14000;
+
+        function initAdserver() {
+          console.log("initAdserver");
+          if (typeof pbjs !== 'undefined' && pbjs.initAdserverSet) return; // if already initi
+          try {
+            adserverCall();
+            adsInterval = setInterval(function(){
+              console.log("sas interval");
+              if(window.sas_manager != null) {
+                console.log("sas render");
+                console.log(window.sas_manager);
+                clearInterval(adsInterval)
+                //if(document.getElementById("sas_20055")) sas.render("sas_20055");
+                console.log("----------------------");
+                console.log("ADS: render finished  ");
+                console.log("----------------------");
+                chamabid();
+            }
+        }, 500)
+            if (pbjs) pbjs.initAdserverSet = true;
+        } catch (e) {
+            console.info("An Ads Exception has ocurred.\n", e);
+        }
+    };
+
+    // function adserverCall() {
+    //     console.log('tentou chamar');
+    //     sas.call("onecall", {
+    //         siteId:   79174,  //
+    //         pageId:   578000,
+    //         formatId: "20055",
+    //         target:   "tga=4;tgg=2;tgp=65;tgp=69;tgp=22;tgp=56;tgs=11;tge=2;tgc=1;content_id=home;PQ_ThCeO8=XXAU-li270;PQ_Vj8tat=XXAU-li269;"
+    //     });
+    // }
+
+    //setTimeout(initAdserver, PREBID_TIMEOUT);
+
+    function chamabid(){
+        var responses=pbjs.getBidResponses();var output=[];for(var adunit in responses){if(responses.hasOwnProperty(adunit)){var bids=responses[adunit].bids;for(var i=0;i<bids.length;i++){var b=bids[i];output.push({'adunit':adunit,'adId':b.adId,'bidder':b.bidder,'time':b.timeToRespond,'cpm':b.cpm,'msg':b.statusMessage})}}}
+        if(output.length){if(console.table){console.table(output)}else{for(var j=0;j<output.length;j++){console.log(output[j])}}}else{console.warn('NO prebid responses')}
+        var bids=pbjs._winningBids;var output=[];for(var i=0;i<bids.length;i++){var b=bids[i];output.push({'adunit':b.adUnitCode,'adId':b.adId,'bidder':b.bidder,'time':b.timeToRespond,'cpm':b.cpm})}
+        if(output.length){if(console.table){console.table(output)}else{for(var j=0;j<output.length;j++){console.log(output[j])}}}else{console.warn('No prebid winners')}
+    }
+
+</script>
+<title></title>
+</head>
+<body>
+
+    <div id="sas_20055" data-mad="" data-mad-smartad-id="20055" data-mad-lazyload-offset="" data-mad-auto-refresh-in-seconds="20" data-mad-auto-refresh-limit="999"></div>
+
+    <!-- versão minimizada -->
+
+    <!--
+    <script type="text/javascript" src="../molotov-ads.min.js" async></script>
+    <script type="text/javascript" src="../plugins/smartadserver.min.js" async></script>
+-->
+
+<!-- ::: versão dev::: usar '#development' no final da url para visualizar os logs 
+ -->
+<script type="text/javascript" src="../molotov-ads.js" async></script>
+<script type="text/javascript" src="../plugins/smartadserver.js" async></script>
+
+<script>
+    var madOptions = {
+        SmartAdServer: {
+            siteId: 109372,
+            pageId: 674831,
+            formatId: '20055',
+            target: function() {
+
+            }
+        }
+    }
+
+
+    // setInterval(function(){
+
+    //   pbjs.que.push(function() {
+    //     pbjs.requestBids({
+    //       timeout: PREBID_TIMEOUT,
+    //       adUnitCodes: ['20055'],
+    //       bidsBackHandler: function() {
+    //         pbjs.setTargetingForGPTAsync(['20055']);
+
+    //         sas.cmd.push(function() {
+    //               console.log('chamou de novo');
+    //               sas.call("std", {
+    //               siteId:   79174,  //
+    //               pageId:   578000,
+    //               formatId: "20055",
+    //               target:   "tga=4;tgg=2;tgp=65;tgp=69;tgp=22;tgp=56;tgs=11;tge=2;tgc=1;content_id=home;PQ_ThCeO8=XXAU-li270;PQ_Vj8tat=XXAU-li269;"
+    //           });
+    //           });
+
+    //         chamabid();
+    //       }
+    //     });
+    //   });
+
+    // },20000);
+</script>
+
+</body>
+</html>
